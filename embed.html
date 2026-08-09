@@ -1,1 +1,216 @@
 
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ambient Rain Clock</title>
+<meta name="description" content="A small, elegant ambient clock with soft nighttime rain and a glowing color-changing trim.">
+<meta name="theme-color" content="#0b0d15">
+<style>
+:root{
+  --glow:#66d9ff;
+  --face:rgba(22,22,34,.90);
+  --text:#d8d8e5;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
+body{
+  overflow:hidden;
+  background:transparent;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#rainCanvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:1;
+  pointer-events:none;
+}
+.clock{
+  position:relative;
+  width:min(220px,92vw,92vh);
+  margin:0;
+  aspect-ratio:1;
+  z-index:5;
+  border-radius:50%;
+  background:var(--face);
+  border:2px solid var(--glow);
+  box-shadow:0 0 16px var(--glow),inset 0 0 14px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+}
+#clockCanvas{width:92%;height:92%;display:block}
+.digital{
+  position:absolute;
+  bottom:19%;
+  z-index:7;
+  color:var(--text);
+  font-size:11px;
+  letter-spacing:1.5px;
+  text-shadow:0 1px 4px rgba(0,0,0,.8);
+  font-variant-numeric:tabular-nums;
+}
+</style>
+</head>
+<body>
+
+
+<canvas id="rainCanvas" aria-hidden="true"></canvas>
+<div class="clock" role="img" aria-label="Ambient analog clock with nighttime rain">
+  <canvas id="clockCanvas" width="320" height="320"></canvas>
+  <div class="digital" id="digital">12:00:00 AM</div>
+</div>
+
+<script>
+const rainCanvas=document.getElementById('rainCanvas');
+const rainCtx=rainCanvas.getContext('2d');
+const clockCanvas=document.getElementById('clockCanvas');
+const ctx=clockCanvas.getContext('2d');
+const digital=document.getElementById('digital');
+let mode='auto';
+let drops=[];
+let lastRain=performance.now();
+
+const colors=['#66d9ff','#a78bfa','#f472b6','#fbbf24','#34d399','#60a5fa'];
+
+function resizeRain(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  rainCanvas.width=Math.floor(innerWidth*dpr);
+  rainCanvas.height=Math.floor(innerHeight*dpr);
+  rainCtx.setTransform(dpr,0,0,dpr,0,0);
+  drops=[];
+  const count=Math.max(170,Math.min(300,Math.floor(innerWidth*innerHeight/5600)));
+  for(let i=0;i<count;i++) drops.push({
+    x:Math.random()*innerWidth,
+    y:Math.random()*innerHeight,
+    len:5+Math.random()*18,
+    speed:300+Math.random()*360,
+    drift:-12-Math.random()*28,
+    alpha:.12+Math.random()*.30,
+    width:.45+Math.random()*.55,
+    kind:Math.random()
+  });
+}
+addEventListener('resize',resizeRain);
+resizeRain();
+
+function solarMode(){
+  const now=new Date();
+  const day=Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())-
+    Date.UTC(now.getFullYear(),0,0))/86400000);
+  const seasonal=Math.sin((2*Math.PI*(day-80))/365);
+  const sunrise=6.75-1.25*seasonal;
+  const sunset=18.25+1.25*seasonal;
+  const h=now.getHours()+now.getMinutes()/60;
+  if(h<sunrise-0.55 || h>sunset+0.55) return 'night';
+  if(h<sunrise+0.45 || h>sunset-0.45) return 'dusk';
+  return 'day';
+}
+
+
+
+function animateRain(now){
+  const dt=Math.min((now-lastRain)/1000,.05);
+  lastRain=now;
+  const current=solarMode();
+  const on=current!=='day';
+  rainCtx.clearRect(0,0,innerWidth,innerHeight);
+
+  if(on){
+    rainCtx.save();
+    rainCtx.strokeStyle='rgba(170,215,245,.52)';
+    rainCtx.lineCap='round';
+    for(const d of drops){
+      d.y+=d.speed*dt;
+      d.x+=d.drift*dt;
+      if(d.y>innerHeight+d.len){d.y=-d.len-Math.random()*100;d.x=Math.random()*innerWidth}
+      if(d.x<-60)d.x=innerWidth+20;
+      rainCtx.globalAlpha=d.alpha*(current==='dusk'?.38:1);
+      if(d.kind<.18){
+        // Occasional tiny droplets keep the field from looking like evenly
+        // spaced streaks.
+        rainCtx.fillStyle='rgba(180,220,245,.45)';
+        rainCtx.beginPath();
+        rainCtx.arc(d.x,d.y,0.7+d.width*.45,0,Math.PI*2);
+        rainCtx.fill();
+      }else{
+        rainCtx.lineWidth=d.width;
+        rainCtx.beginPath();
+        rainCtx.moveTo(d.x,d.y);
+        rainCtx.lineTo(d.x+d.drift*.018,d.y+d.len);
+        rainCtx.stroke();
+      }
+    }
+    rainCtx.restore();
+  }
+  requestAnimationFrame(animateRain);
+}
+requestAnimationFrame(animateRain);
+
+function drawHand(angle,length,width,color){
+  ctx.save();
+  ctx.rotate(angle);
+  ctx.strokeStyle=color;
+  ctx.lineWidth=width;
+  ctx.lineCap='round';
+  ctx.shadowColor=color;
+  ctx.shadowBlur=width<=2?6:4;
+  ctx.beginPath();
+  ctx.moveTo(0,12);
+  ctx.lineTo(0,-length);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawClock(){
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds()+now.getMilliseconds()/1000;
+  const color=colors[m%colors.length];
+  document.documentElement.style.setProperty('--glow',color);
+  const current=solarMode();
+  document.documentElement.style.setProperty('--face',
+    current==='day' ? 'rgba(255,255,255,.88)' :
+    current==='dusk' ? 'rgba(35,32,46,.90)' :
+    'rgba(18,18,28,.92)');
+  document.documentElement.style.setProperty('--text',
+    current==='day' ? '#424a53' : '#d8d8e5');
+
+  const dark=current!=='day';
+  const r=clockCanvas.width/2;
+  ctx.clearRect(0,0,320,320);
+  ctx.save();ctx.translate(r,r);
+
+  ctx.beginPath();ctx.arc(0,0,r-10,0,Math.PI*2);
+  ctx.fillStyle=dark?'rgba(22,22,34,.90)':'rgba(255,255,255,.90)';
+  ctx.fill();
+
+  for(let i=0;i<60;i++){
+    const a=i*Math.PI/30;
+    ctx.save();ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(0,-r+22);ctx.lineTo(0,-r+(i%5===0?32:26));
+    ctx.lineWidth=i%5===0?3:1;
+    ctx.strokeStyle=dark?'#525266':'#cbd5e1';
+    ctx.stroke();ctx.restore();
+  }
+
+  drawHand(((h%12)+m/60)*Math.PI/6,r*.50,5,color);
+  drawHand((m+s/60)*Math.PI/30,r*.72,3,color);
+  drawHand(s*Math.PI/30,r*.82,2,color);
+
+  ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);
+  ctx.fillStyle=color;ctx.fill();
+  ctx.restore();
+
+  const hh=h%12||12;
+  digital.textContent=`${hh}:${String(m).padStart(2,'0')}:${String(Math.floor(s)).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+  requestAnimationFrame(drawClock);
+}
+requestAnimationFrame(drawClock);
+</script>
+</body>
+</html>

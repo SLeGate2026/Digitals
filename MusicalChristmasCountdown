@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holiday Magic Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mountains+of+Christmas:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #c41e3a;
+            --deep-red: #8b0000;
+            --pine-green: #165b33;
+            --gold: #f8b229;
+            --snow: #fcfcfc;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .widget-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(20, 30, 35, 0.9);
+            border: 3px solid var(--gold);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Mountains of Christmas', cursive;
+            font-size: 3rem;
+            color: var(--gold);
+            margin: 0 0 10px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Countdown Grid */
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .time-box {
+            background: rgba(196, 30, 58, 0.2);
+            border: 2px solid var(--primary-red);
+            border-radius: 12px;
+            padding: 12px 5px;
+        }
+
+        .time-box span {
+            display: block;
+        }
+
+        .time-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--snow);
+        }
+
+        .time-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        /* Music Controls */
+        .music-panel {
+            background: rgba(22, 91, 51, 0.3);
+            border: 2px solid var(--pine-green);
+            border-radius: 14px;
+            padding: 15px;
+            margin: 25px 0;
+        }
+
+        .song-title {
+            font-size: 0.95rem;
+            color: var(--gold);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: var(--gold);
+            color: #111;
+            border: none;
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(248, 178, 41, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            background: #ffcc4d;
+        }
+
+        /* 12 Days Section */
+        .twelve-days-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 5px solid var(--gold);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .twelve-days-card h3 {
+            margin: 0 0 8px 0;
+            color: var(--gold);
+            font-size: 1.1rem;
+        }
+
+        .twelve-days-card p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #ddd;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: var(--primary-red);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="widget-container">
+    <h1>🎄 Christmas Countdown 🎄</h1>
+    
+    <!-- Countdown Timer -->
+    <div class="countdown-grid">
+        <div class="time-box">
+            <span id="days" class="time-value">00</span>
+            <span class="time-label">Days</span>
+        </div>
+        <div class="time-box">
+            <span id="hours" class="time-value">00</span>
+            <span class="time-label">Hours</span>
+        </div>
+        <div class="time-box">
+            <span id="mins" class="time-value">00</span>
+            <span class="time-label">Mins</span>
+        </div>
+        <div class="time-box">
+            <span id="secs" class="time-value">00</span>
+            <span class="time-label">Secs</span>
+        </div>
+    </div>
+
+    <!-- Music Player -->
+    <div class="music-panel">
+        <div class="song-title" id="songDisplay">Now Playing: Ready to Play</div>
+        <button class="btn" id="musicToggleBtn" onclick="toggleMusic()">🎶 Play Jingle Bells</button>
+    </div>
+
+    <!-- 12 Days Feature -->
+    <div class="twelve-days-card" id="twelveDaysContainer">
+        <!-- Dynamically populated -->
+    </div>
+</div>
+
+<script>
+    /* --- 1. COUNTDOWN LOGIC --- */
+    function updateCountdown() {
+        const now = new Date();
+        let currentYear = now.getFullYear();
+        let christmas = new Date(currentYear, 11, 25);
+
+        if (now > christmas) {
+            christmas = new Date(currentYear + 1, 11, 25);
+        }
+
+        const diff = christmas - now;
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / 1000 / 60) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+
+        document.getElementById('days').innerText = String(days).padStart(2, '0');
+        document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+        document.getElementById('mins').innerText = String(mins).padStart(2, '0');
+        document.getElementById('secs').innerText = String(secs).padStart(2, '0');
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    /* --- 2. 12 DAYS OF CHRISTMAS IDEAS (Dec 14 - Dec 25) --- */
+    const holidayContent = [
+        { day: 1, dateStr: "Dec 14", title: "Day 1: Hand-Painted Ceramic Resin Ornaments", type: "Gift Idea", desc: "Mix up a quick batch of gypsum composite or resin, pour into holiday molds, and paint custom heirloom tags for loved ones." },
+        { day: 2, dateStr: "Dec 15", title: "Day 2: Classic Spiced Gingerbread Cookies", type: "Recipe", desc: "Fill your home with the warm aroma of molasses, ginger, and cinnamon. Perfect for decorating with royal icing." },
+        { day: 3, dateStr: "Dec 16", title: "Day 3: Custom Layered Vinyl Holiday Mugs", type: "Gift Idea", desc: "Create festive mugs with permanent vinyl or holiday graphics—great for gifting hot cocoa mix inside!" },
+        { day: 4, dateStr: "Dec 17", title: "Day 4: Peppermint Bark Fudge", type: "Recipe", desc: "An easy 3-ingredient stovetop or microwave fudge layered with rich chocolate and crushed candy canes." },
+        { day: 5, dateStr: "Dec 18", title: "Day 5: Handcrafted Scented Wax Melts / Candles", type: "Gift Idea", desc: "Pour pine- or cinnamon-scented wax into small tins or silicone molds for a cozy handmade gift." },
+        { day: 6, dateStr: "Dec 19", title: "Day 6: Cranberry Orange Shortbread Cookies", type: "Recipe", desc: "Buttery, crumbly shortbread laced with bright citrus zest and tart dried cranberries." },
+        { day: 7, dateStr: "Dec 20", title: "Day 7: Custom Laser/Cutter Acrylic Nightlights", type: "Gift Idea", desc: "Design a glowing winter wonderland scene using engraved acrylic sheets lit by an LED base." },
+        { day: 8, dateStr: "Dec 21", title: "Day 8: Rich Hot Chocolate Bombs", type: "Recipe", desc: "Melted chocolate spheres filled with cocoa powder and mini marshmallows that explode when hot milk is poured over them." },
+        { day: 9, dateStr: "Dec 22", title: "Day 9: Layered Vinyl & Cardstock Winter Shadow Boxes", type: "Gift Idea", desc: "Stack dimensional cardstock layers inside a framed shadow box to create a magical glowing forest vignette." },
+        { day: 10, dateStr: "Dec 23", title: "Day 10: Classic Sugar Cookies with Royal Icing", type: "Recipe", desc: "The ultimate holiday baking tradition—bake crisp cut-outs and spend an afternoon flooding them with smooth icing." },
+        { day: 11, dateStr: "Dec 24", title: "Day 11: Personalized Family Christmas Eve Box", type: "Gift Idea", desc: "A custom-labeled wooden or cardboard crate filled with new pajamas, a movie, and treats for Christmas Eve night." },
+        { day: 12, dateStr: "Dec 25", title: "Day 12: Christmas Morning Cinnamon Rolls", type: "Recipe", desc: "Fluffy, soft-baked homemade cinnamon rolls dripping with cream cheese frosting to kick off Christmas morning." }
+    ];
+
+    function updateTwelveDays() {
+        const container = document.getElementById('twelveDaysContainer');
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentDate = now.getDate();
+
+        if (currentMonth === 11 && currentDate >= 14 && currentDate <= 25) {
+            const index = currentDate - 14;
+            const item = holidayContent[index];
+            container.innerHTML = `
+                <span class="status-badge">${item.type} • ${item.dateStr}</span>
+                <h3>✨ Today's Feature: ${item.title}</h3>
+                <p>${item.desc}</p>
+            `;
+        } else if (currentMonth === 11 && currentDate < 14) {
+            container.innerHTML = `
+                <span class="status-badge">Countdown Preview</span>
+                <h3>🎁 12 Days of Holiday Inspiration</h3>
+                <p>The daily recipes and craft ideas will automatically unlock starting on <strong>December 14th</strong>!</p>
+            `;
+        } else {
+            container.innerHTML = `
+                <span class="status-badge">Off-Season</span>
+                <h3>🌲 12 Days of Christmas Countdown</h3>
+                <p>This feature goes live every year from December 14th through December 25th. Check back then for daily ideas!</p>
+            `;
+        }
+    }
+    updateTwelveDays();
+
+    /* --- 3. SINGLE-SONG SYNTHETIC MUSIC PLAYER (Jingle Bells Loop) --- */
+    let audioCtx = null;
+    let isPlaying = false;
+    let activeTimeouts = [];
+
+    const jingleBellsSong = {
+        name: "Jingle Bells",
+        tempo: 130, // Beats per minute
+        notes: [
+            // Verse / Chorus phrase
+            {n: 'E4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 2},
+            {n: 'E4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 2},
+            {n: 'E4', b: 1}, {n: 'G4', b: 1}, {n: 'C4', b: 1.5}, {n: 'D4', b: 0.5}, {n: 'E4', b: 4},
+            {n: 'F4', b: 1}, {n: 'F4', b: 1}, {n: 'F4', b: 1.5}, {n: 'F4', b: 0.5},
+            {n: 'F4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 1},
+            {n: 'E4', b: 1}, {n: 'D4', b: 1}, {n: 'D4', b: 1}, {n: 'E4', b: 1}, {n: 'D4', b: 2}, {n: 'G4', b: 2},
+            // Repeat second half
+            {n: 'E4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 2},
+            {n: 'E4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 2},
+            {n: 'E4', b: 1}, {n: 'G4', b: 1}, {n: 'C4', b: 1.5}, {n: 'D4', b: 0.5}, {n: 'E4', b: 4},
+            {n: 'F4', b: 1}, {n: 'F4', b: 1}, {n: 'F4', b: 1.5}, {n: 'F4', b: 0.5},
+            {n: 'F4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 1}, {n: 'E4', b: 1},
+            {n: 'G4', b: 1}, {n: 'G4', b: 1}, {n: 'F4', b: 1}, {n: 'D4', b: 1}, {n: 'C4', b: 4}
+        ]
+    };
+
+    const noteFrequencies = {
+        'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23,
+        'G4': 392.00, 'A4': 440.00, 'B4': 493.88, 'C5': 523.25
+    };
+
+    function toggleMusic() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        isPlaying = !isPlaying;
+        const btn = document.getElementById('musicToggleBtn');
+
+        if (isPlaying) {
+            btn.innerText = "🔇 Stop Jingle Bells";
+            playSongLoop();
+        } else {
+            btn.innerText = "🎶 Play Jingle Bells";
+            stopAllMusic();
+            document.getElementById('songDisplay').innerText = "Now Playing: Paused";
+        }
+    }
+
+    function stopAllMusic() {
+        activeTimeouts.forEach(t => clearTimeout(t));
+        activeTimeouts = [];
+    }
+
+    function playSongLoop() {
+        if (!isPlaying) return;
+
+        document.getElementById('songDisplay').innerText = `Now Playing: ${jingleBellsSong.name} (Looping)`;
+
+        let beatDuration = 60 / jingleBellsSong.tempo;
+        let cumulativeTime = 0;
+
+        jingleBellsSong.notes.forEach((noteObj) => {
+            let noteTimeOffset = cumulativeTime * beatDuration;
+            let noteDuration = noteObj.b * beatDuration;
+
+            let timeoutId = setTimeout(() => {
+                if (!isPlaying) return;
+                
+                let freq = noteFrequencies[noteObj.n];
+                if (freq) {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (noteDuration * 0.9));
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + noteDuration);
+                }
+            }, noteTimeOffset * 1000);
+
+            activeTimeouts.push(timeoutId);
+            cumulativeTime += noteObj.b;
+        });
+
+        // Loop the song seamlessly with a 1.5-second pause at the end
+        let totalDurationMs = (cumulativeTime * beatDuration) * 1000 + 1500;
+        let loopTimeout = setTimeout(() => {
+            if (!isPlaying) return;
+            playSongLoop();
+        }, totalDurationMs);
+
+        activeTimeouts.push(loopTimeout);
+    }
+</script>
+
+</body>
+</html>

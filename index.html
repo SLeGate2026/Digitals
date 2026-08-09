@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Ambient Clock — Rain Test</title>
+<title>Ambient Rain Clock</title>
+<meta name="description" content="A small, elegant ambient clock with soft nighttime rain and a glowing color-changing trim.">
+<meta name="theme-color" content="#0b0d15">
 <style>
 :root{
   --glow:#66d9ff;
@@ -25,25 +27,10 @@ body{
   z-index:1;
   pointer-events:none;
 }
-#testControls{
-  position:fixed;
-  top:12px;left:12px;
-  z-index:20;
-  display:flex;gap:5px;
-  padding:7px;
-  border-radius:9px;
-  background:rgba(0,0,0,.48);
-  backdrop-filter:blur(8px);
-}
-#testControls button{
-  border:0;border-radius:6px;
-  padding:6px 9px;
-  font:12px system-ui,sans-serif;
-  cursor:pointer;
-}
 .clock{
   position:relative;
   width:min(220px,70vw,70vh);
+  margin:0;
   aspect-ratio:1;
   z-index:5;
   border-radius:50%;
@@ -63,21 +50,13 @@ body{
   text-shadow:0 1px 4px rgba(0,0,0,.8);
   font-variant-numeric:tabular-nums;
 }
-#status{
-  position:fixed;right:12px;top:12px;
-  z-index:20;
-  color:#ddd;
-  background:rgba(0,0,0,.45);
-  padding:6px 9px;border-radius:7px;
-  font:12px system-ui,sans-serif;
-}
 </style>
 </head>
 <body>
 
 
-<canvas id="rainCanvas"></canvas>
-<div class="clock">
+<canvas id="rainCanvas" aria-hidden="true"></canvas>
+<div class="clock" role="img" aria-label="Ambient analog clock with nighttime rain">
   <canvas id="clockCanvas" width="320" height="320"></canvas>
   <div class="digital" id="digital">12:00:00 AM</div>
 </div>
@@ -88,7 +67,6 @@ const rainCtx=rainCanvas.getContext('2d');
 const clockCanvas=document.getElementById('clockCanvas');
 const ctx=clockCanvas.getContext('2d');
 const digital=document.getElementById('digital');
-const statusEl=document.getElementById('status');
 let mode='auto';
 let drops=[];
 let lastRain=performance.now();
@@ -197,7 +175,7 @@ function drawClock(){
   document.documentElement.style.setProperty('--text',
     current==='day' ? '#424a53' : '#d8d8e5');
 
-  const dark=mode!=='day';
+  const dark=current!=='day';
   const r=clockCanvas.width/2;
   ctx.clearRect(0,0,320,320);
   ctx.save();ctx.translate(r,r);

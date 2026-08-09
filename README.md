@@ -1,5 +1,5 @@
 [README.md](https://github.com/user-attachments/files/30866209/README.md)
-# Ambient Rain Clock
+# Ambient Glow Clock
 
 A small, elegant ambient clock designed to sit quietly on a screen.
 
@@ -7,15 +7,10 @@ A small, elegant ambient clock designed to sit quietly on a screen.
 
 - Thin glowing clock trim and matching hands
 - Color changes automatically each minute
-- Gradual day, dusk, and night appearance
-- Soft, varied ambient rain during dusk/night
 - Transparent page background
 - No controls or feature descriptions on the clock itself
 - Responsive sizing for browser windows
 
-### About the rain
-
-The rain is an **ambient visual effect**. It is not connected to live weather.
 
 ### Live version
 
